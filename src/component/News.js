@@ -88,7 +88,7 @@ class News extends Component {
     render() {
         return (
             <div className="container my-4">
-                <h3 className="text-center">NewsMonkey - Top {this.state.topic.charAt(0).toUpperCase() + this.state.topic.slice(1)} Headlines</h3>
+                <h3 className="text-center" style={{marginTop: "70px"}}>NewsMonkey - Top {this.state.topic.charAt(0).toUpperCase() + this.state.topic.slice(1)} Headlines</h3>
                 {/* {this.state.loading && <Spinner />} */}
                 <InfiniteScroll
                     dataLength={this.state.articles.length}
