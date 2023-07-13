@@ -1,116 +1,88 @@
-import React, { Component } from 'react'
+import React, { useEffect, useState } from 'react'
 import NewsItem from './NewsItem';
 import Spinner from './Spinner';
 import PropTypes from 'prop-types'
 import InfiniteScroll from "react-infinite-scroll-component";
 
-class News extends Component {
+const News = (props) => {
 
-    static defaultProps = {
-        topic: "cricket"
-    }
+    const [articles, setArticles] = useState([]);
+    const [totalResults, setTotalResults] = useState(0);
+    const [page, setPage] = useState(1);
+    const [topic, setTopic] = useState(props.topic)
 
-    static propTypes = {
-        topic: PropTypes.string
-    }
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            apiKey: process.env.REACT_APP_NEWS_API,
-            articles: [],
-            totalResults: 0,
-            // loading: false,
-            page: 1,
-            pageSize: 20,
-            topic: props.topic,
-            from: function () {
-                let today = new Date();
-                let date = today.setDate(today.getDate() - 2);
-                let dayBeforeYesterDay = new Date(date).toISOString();
-                return dayBeforeYesterDay.split("T")[0];
-            },
-            to: function () {
-                let today = new Date();
-                let date = today.setDate(today.getDate() - 1);
-                let yesterday = new Date(date).toISOString();
-                return yesterday.split("T")[0];
-            }
+    const details = {
+        apiKey: process.env.REACT_APP_NEWS_API,
+        pageSize: 20,
+        from: function () {
+            let today = new Date();
+            let date = today.setDate(today.getDate() - 2);
+            let dayBeforeYesterDay = new Date(date).toISOString();
+            return dayBeforeYesterDay.split("T")[0];
+        },
+        to: function () {
+            let today = new Date();
+            let date = today.setDate(today.getDate() - 1);
+            let yesterday = new Date(date).toISOString();
+            return yesterday.split("T")[0];
         }
-        document.title = `NewsMonkey - ${props.topic.charAt(0).toUpperCase() + props.topic.slice(1)}`
-    }
-
-    updateNews = async () => {
-        this.props.setProgress(20);
-        const url = `https://newsapi.org/v2/everything?q=${this.state.topic}&from=${this.state.from()}&to=${this.state.to()}&page=${this.state.page}&pageSize=${this.state.pageSize}&apiKey=${this.state.apiKey}`;
-        this.props.setProgress(40);
-        // this.setState({ loading: true });
-        let data = await fetch(url);
-        this.props.setProgress(60);
-        let parsedData = await data.json();
-        this.props.setProgress(100);
-        this.setState({
-            totalResults: parsedData.totalResults,
-            articles: parsedData.articles,
-            // loading: false
-        })
-    }
-
-    componentDidMount() {
-        this.updateNews();
-    }
-
-    /* handlePreviousClick = async () => {
-        this.setState({
-            page: this.state.page - 1
-        })
-        this.updateNews();
-    }
-
-    handleNextClick = async () => {
-        this.setState({
-            page: this.state.page + 1
-        })
-        this.updateNews();
-    } */
-
-    fetchMoreData = async () => {
-        const url = `https://newsapi.org/v2/everything?q=${this.state.topic}&from=${this.state.from()}&to=${this.state.to()}&page=${this.state.page + 1}&pageSize=${this.state.pageSize}&apiKey=${this.state.apiKey}`;
-        let data = await fetch(url);
-        let parsedData = await data.json();
-        this.setState({
-            totalResults: parsedData.totalResults,
-            articles: this.state.articles.concat(parsedData.articles),
-            page: this.state.page + 1
-        })
     };
 
-    render() {
-        return (
-            <div className="container my-4">
-                <h3 className="text-center" style={{marginTop: "70px"}}>NewsMonkey - Top {this.state.topic.charAt(0).toUpperCase() + this.state.topic.slice(1)} Headlines</h3>
-                {/* {this.state.loading && <Spinner />} */}
-                <InfiniteScroll
-                    dataLength={this.state.articles.length}
-                    next={this.fetchMoreData}
-                    hasMore={this.state.articles.length !== 100}
-                    loader={<Spinner />}
-                >
-                    <div className="row">
-                        {/*!this.state.loading &&*/ this.state.articles.map((element) => {
-                            return (<div className="col-md-3" key={element.url}>
-                                <NewsItem source={element.source} author={element.author} title={element.title} description={element.description} url={element.url} urlToImage={element.urlToImage} publishedAt={element.publishedAt}/>
-                            </div>);
-                        })}
-                    </div>
-                </InfiniteScroll>
-                {/* <div className="container d-flex flex-row justify-content-between">
-                    <button type="button" className="btn btn-dark" disabled={this.state.page === 1} onClick={this.handlePreviousClick}>&larr; Previous</button>
-                    <button type="button" className="btn btn-dark" disabled={this.state.page + 1 > Math.ceil(5)} onClick={this.handleNextClick}>Next &rarr;</button>
-                </div> */}
-            </div>
-        )
+    const updateNews = async () => {
+        props.setProgress(20);
+        const url = `https://newsapi.org/v2/everything?q=${topic}&from=${details.from()}&to=${details.to()}&page=${page}&pageSize=${details.pageSize}&apiKey=${details.apiKey}`;
+        props.setProgress(40);
+        let data = await fetch(url);
+        props.setProgress(60);
+        let parsedData = await data.json();
+        props.setProgress(100);
+        setTotalResults(parsedData.totalResults);
+        setArticles(parsedData.articles);
     }
+
+    useEffect(() => {
+        console.log("useEffect called");
+        document.title = `NewsMonkey - ${topic.charAt(0).toUpperCase() + topic.slice(1)}`
+        updateNews();
+    }, []);
+
+    const fetchMoreData = async () => {
+        console.log("fetchMoreData called")
+        const url = `https://newsapi.org/v2/everything?q=${topic}&from=${details.from()}&to=${details.to()}&page=${page + 1}&pageSize=${details.pageSize}&apiKey=${details.apiKey}`;
+        let data = await fetch(url);
+        let parsedData = await data.json();
+        setTotalResults(parsedData.totalResults);
+        setArticles(articles.concat(parsedData.articles));
+        setPage(page + 1);
+    };
+
+    return (
+        <div className="container my-4">
+            <h3 className="text-center" style={{ marginTop: "70px" }}>NewsMonkey - Top {topic.charAt(0).toUpperCase() + topic.slice(1)} Headlines</h3>
+            <InfiniteScroll
+                dataLength={articles.length}
+                next={fetchMoreData}
+                hasMore={articles.length !== 100}
+                loader={<Spinner />}
+            >
+                <div className="row">
+                    {articles.map((element) => {
+                        return (<div className="col-md-3" key={element.url}>
+                            <NewsItem source={element.source} author={element.author} title={element.title} description={element.description} url={element.url} urlToImage={element.urlToImage} publishedAt={element.publishedAt} />
+                        </div>);
+                    })}
+                </div>
+            </InfiniteScroll>
+        </div>
+    )
 }
 
 export default News;
+
+News.propTypes = {
+    topic: PropTypes.string
+}
+
+News.defaultProps = {
+    topic: "cricket"
+}
