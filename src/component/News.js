@@ -9,7 +9,8 @@ const News = (props) => {
     const [articles, setArticles] = useState([]);
     const [totalResults, setTotalResults] = useState(0);
     const [page, setPage] = useState(1);
-    const [topic, setTopic] = useState(props.topic)
+    const [topic, setTopic] = useState(props.topic);
+    const [runFetchMoreData, setRunFetchMoreData] = useState(false);
 
     const details = {
         apiKey: process.env.REACT_APP_NEWS_API,
@@ -38,6 +39,7 @@ const News = (props) => {
         props.setProgress(100);
         setTotalResults(parsedData.totalResults);
         setArticles(parsedData.articles);
+        setRunFetchMoreData(true);
     }
 
     useEffect(() => {
@@ -47,13 +49,14 @@ const News = (props) => {
     }, []);
 
     const fetchMoreData = async () => {
-        console.log("fetchMoreData called")
-        const url = `https://newsapi.org/v2/everything?q=${topic}&from=${details.from()}&to=${details.to()}&page=${page + 1}&pageSize=${details.pageSize}&apiKey=${details.apiKey}`;
-        let data = await fetch(url);
-        let parsedData = await data.json();
-        setTotalResults(parsedData.totalResults);
-        setArticles(articles.concat(parsedData.articles));
-        setPage(page + 1);
+        if(runFetchMoreData) {
+            const url = `https://newsapi.org/v2/everything?q=${topic}&from=${details.from()}&to=${details.to()}&page=${page + 1}&pageSize=${details.pageSize}&apiKey=${details.apiKey}`;
+            let data = await fetch(url);
+            let parsedData = await data.json();
+            setTotalResults(parsedData.totalResults);
+            setArticles(articles.concat(parsedData.articles));
+            setPage(page + 1);
+        }
     };
 
     return (
@@ -62,15 +65,17 @@ const News = (props) => {
             <InfiniteScroll
                 dataLength={articles.length}
                 next={fetchMoreData}
-                hasMore={articles.length !== 100}
+                hasMore={articles.length < 100}
                 loader={<Spinner />}
             >
-                <div className="row">
-                    {articles.map((element) => {
-                        return (<div className="col-md-3" key={element.url}>
-                            <NewsItem source={element.source} author={element.author} title={element.title} description={element.description} url={element.url} urlToImage={element.urlToImage} publishedAt={element.publishedAt} />
-                        </div>);
-                    })}
+                <div className="container">
+                    <div className="row">
+                        {articles.map((element) => {
+                            return (<div className="col-md-3" key={element.url}>
+                                <NewsItem source={element.source} author={element.author} title={element.title} description={element.description} url={element.url} urlToImage={element.urlToImage} publishedAt={element.publishedAt} />
+                            </div>);
+                        })}
+                    </div>
                 </div>
             </InfiniteScroll>
         </div>
