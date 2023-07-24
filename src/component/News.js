@@ -3,6 +3,7 @@ import NewsItem from './NewsItem';
 import Spinner from './Spinner';
 import PropTypes from 'prop-types'
 import InfiniteScroll from "react-infinite-scroll-component";
+import Swal from 'sweetalert2';
 
 const News = (props) => {
 
@@ -11,6 +12,7 @@ const News = (props) => {
     const [page, setPage] = useState(1);
     const [topic, setTopic] = useState(props.topic);
     const [runFetchMoreData, setRunFetchMoreData] = useState(false);
+    const [apiStatus, setApiStatus] = useState(true);
 
     const details = {
         apiKey: process.env.REACT_APP_NEWS_API,
@@ -34,28 +36,45 @@ const News = (props) => {
         const url = `https://newsapi.org/v2/everything?q=${topic}&from=${details.from()}&to=${details.to()}&page=${page}&pageSize=${details.pageSize}&apiKey=${details.apiKey}`;
         props.setProgress(40);
         let data = await fetch(url);
-        props.setProgress(60);
-        let parsedData = await data.json();
-        props.setProgress(100);
-        setTotalResults(parsedData.totalResults);
-        setArticles(parsedData.articles);
-        setRunFetchMoreData(true);
+
+        if (data.status === 200) {
+            props.setProgress(60);
+            let parsedData = await data.json();
+            props.setProgress(100);
+            setTotalResults(parsedData.totalResults);
+            setArticles(parsedData.articles);
+            setRunFetchMoreData(true);
+        }
+        else {
+            props.setProgress(60);
+            props.setProgress(100);
+            setApiStatus(false);
+            Swal.fire("Sorry! Error fetching news, Please try in some time");
+        }
     }
 
     useEffect(() => {
-        console.log("useEffect called");
         document.title = `NewsMonkey - ${topic.charAt(0).toUpperCase() + topic.slice(1)}`
         updateNews();
     }, []);
 
     const fetchMoreData = async () => {
-        if(runFetchMoreData) {
+        if (runFetchMoreData) {
             const url = `https://newsapi.org/v2/everything?q=${topic}&from=${details.from()}&to=${details.to()}&page=${page + 1}&pageSize=${details.pageSize}&apiKey=${details.apiKey}`;
             let data = await fetch(url);
-            let parsedData = await data.json();
-            setTotalResults(parsedData.totalResults);
-            setArticles(articles.concat(parsedData.articles));
-            setPage(page + 1);
+
+            if (data.status === 200) {
+                let parsedData = await data.json();
+                setTotalResults(parsedData.totalResults);
+                setArticles(articles.concat(parsedData.articles));
+                setPage(page + 1);
+            }
+            else {
+                props.setProgress(60);
+                props.setProgress(100);
+                setApiStatus(false);
+                Swal.fire("Sorry! Error fetching news, Please try in some time");
+            }
         }
     };
 
@@ -65,8 +84,13 @@ const News = (props) => {
             <InfiniteScroll
                 dataLength={articles.length}
                 next={fetchMoreData}
-                hasMore={articles.length < 100}
+                hasMore={articles.length !== 100 && apiStatus}
                 loader={<Spinner />}
+                endMessage={
+                    apiStatus && <p style={{ textAlign: 'center' }}>
+                        <b>Yay! You have seen it all</b>
+                    </p>
+                }
             >
                 <div className="container">
                     <div className="row">
