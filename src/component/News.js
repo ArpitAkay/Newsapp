@@ -8,9 +8,10 @@ import Swal from 'sweetalert2';
 const News = (props) => {
 
     const [articles, setArticles] = useState([]);
+    // eslint-disable-next-line
     const [totalResults, setTotalResults] = useState(0);
     const [page, setPage] = useState(1);
-    const [topic, setTopic] = useState(props.topic);
+    const [topic] = useState(props.topic);
     const [runFetchMoreData, setRunFetchMoreData] = useState(false);
     const [apiStatus, setApiStatus] = useState(true);
 
@@ -56,6 +57,7 @@ const News = (props) => {
     useEffect(() => {
         document.title = `NewsMonkey - ${topic.charAt(0).toUpperCase() + topic.slice(1)}`
         updateNews();
+        // eslint-disable-next-line
     }, []);
 
     const fetchMoreData = async () => {
